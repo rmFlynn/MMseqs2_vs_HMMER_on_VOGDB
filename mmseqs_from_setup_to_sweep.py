@@ -1,9 +1,9 @@
 """Download, format data and make a sweep of mmseqs prams"""
 import os
 from subprocess import Popen
+from datetime import datetime
 import pandas as pd
 import numpy as np
-from datetime import datetime
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import label_binarize
 from sklearn import svm, datasets
@@ -46,25 +46,29 @@ def process_vogdb_profile(threads):
     os.mkdir("mmseqs_profile")
     os.chdir("mmseqs_profile")
     Popen(['mmseqs', 'tar2db',
-           WORKING_DIR + '/VOGDB_data/vog.raw_algs.tar.gz', # Input
-           'vog_msa',                                      # Output
-           '--output-dbtype', '11',
-           '--threads',  str(threads)]).wait()
+           WORKING_DIR + "/VOGDB_data/vog.raw_algs.tar.gz", # Input
+           "vog_msa",                                      # Output
+           "--output-dbtype", "11",
+           # "--tar-include", "'.*msa$'",
+           "--threads",  str(threads)]).wait()
     os.system("mmseqs msa2profile vog_msa profile --match-mode 1")
     # also process to proteins to be annotated
     os.chdir(WORKING_DIR)
 
-def process_vogdb_target(sensitivity, threads):
+def process_vogdb_target(threads, sensitivity=None, index=False):
     os.chdir(WORKING_DIR)
     os.system("mkdir to_annotate")
     Popen(['mmseqs', 'createdb',
           WORKING_DIR + '/VOGDB_data/vog.proteins.all.fa.gz',
           'to_annotate/vog.proteins.all']).wait()
     # indexes target DB
-    os.system("mkdir to_annotate/temp")
-    Popen(['mmseqs', 'createindex', 'to_annotate/vog.proteins.all',
-           'to_annotate/temp', '-k', '6', '-s', str(sensitivity),
-           '--threads', str(threads)]).wait()
+    if index:
+        assert sensitivity is not None, \
+            "you must provide sensitivity to use in the index"
+        os.system("mkdir to_annotate/temp")
+        Popen(['mmseqs', 'createindex', 'to_annotate/vog.proteins.all',
+               'to_annotate/temp', '-k', '6', '-s', str(sensitivity),
+               '--threads', str(threads)]).wait()
 
 # os.system("head mmseqs_profile/profile")
 def mmseqs_search(sensitivity, evalue, threads):
@@ -89,13 +93,6 @@ def main():
         for sens in range(2, 16, 1):
             mmseqs_search(sens/2, float("1e%i"%evalue))
 
-sensitivity = 1
-evalue = 0.1
-threads = 64
-download_all_vog_data()
-process_vogdb_profile(62)
-process_vogdb_target(sensitivity, 62)
-mmseqs_search(sensitivity, evalue, threads)
 
 if __name__ == '__main__':
     main()
