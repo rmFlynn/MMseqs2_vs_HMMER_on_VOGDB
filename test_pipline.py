@@ -42,9 +42,20 @@ class TestAll(unittest.TestCase):
                         '/sweep_output/evalue_%s_sens_%f' \
                         %(str(self.evalue), self.sensitivity))
 
-def clean():
-    os.rename(WORKING_DIR, TESTING_DIR)
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    @staticmethod
+    def disconnect():
+        os.rename(WORKING_DIR, TESTING_DIR)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.disconnect()
+
 
 if __name__ == '__main__':
     unittest.main()
-    clean()
+
+

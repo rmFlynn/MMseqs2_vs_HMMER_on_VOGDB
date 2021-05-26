@@ -8,8 +8,5 @@
 #SBATCH --mail-user=rmflynn@colostate.edu
 #SBATCH --partition=wrighton-hi,wrighton-low
 
-
-
-# MAG QA
 cd /home/projects/DRAM/hmmer_mmseqs2_testing_take_2/job_scripts/MMseqs2_scripts
 ~/miniconda3/envs/DRAM/bin/python -m unittest

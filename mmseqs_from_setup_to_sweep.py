@@ -2,15 +2,6 @@
 import os
 from subprocess import Popen
 from datetime import datetime
-import pandas as pd
-import numpy as np
-from matplotlib import pyplot as plt
-from sklearn.preprocessing import label_binarize
-from sklearn import svm, datasets
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
-from sklearn.model_selection import train_test_split
 
 BOUTFMT6_COLUMNS = ['qId', 'tId', 'seqIdentity', 'alnLen', 'mismatchCnt',
                     'gapOpenCnt', 'qStart', 'qEnd', 'tStart', 'tEnd', 'eVal',
@@ -20,6 +11,7 @@ BOUTFMT6_COLUMNS = ['qId', 'tId', 'seqIdentity', 'alnLen', 'mismatchCnt',
 WORKING_DIR = ("/home/projects/DRAM/hmmer_mmseqs2_testing_take_2/mmseqs/"
                "results_"+ datetime.now().strftime("%Y_%m_%d_%H"))
 
+THREADS = 64
 
 ###############
 # Vogdb setup #
@@ -52,10 +44,10 @@ def process_vogdb_profile(threads):
            # "--tar-include", "'.*msa$'",
            "--threads",  str(threads)]).wait()
     os.system("mmseqs msa2profile vog_msa profile --match-mode 1")
-    # also process to proteins to be annotated
     os.chdir(WORKING_DIR)
 
 def process_vogdb_target(threads, sensitivity=None, index=False):
+    """process to proteins to be annotated"""
     os.chdir(WORKING_DIR)
     os.system("mkdir to_annotate")
     Popen(['mmseqs', 'createdb',
@@ -70,7 +62,6 @@ def process_vogdb_target(threads, sensitivity=None, index=False):
                'to_annotate/temp', '-k', '6', '-s', str(sensitivity),
                '--threads', str(threads)]).wait()
 
-# os.system("head mmseqs_profile/profile")
 def mmseqs_search(sensitivity, evalue, threads):
     os.chdir(WORKING_DIR)
     os.system("mkdir raw_sweep_output")
@@ -89,9 +80,12 @@ def mmseqs_search(sensitivity, evalue, threads):
            ]).wait()
 
 def main():
+    download_all_vog_data()
+    process_vogdb_profile(THREADS)
+    process_vogdb_target(THREADS)
     for evalue in range(-20, 0, 2):
         for sens in range(2, 16, 1):
-            mmseqs_search(sens/2, float("1e%i"%evalue))
+            mmseqs_search(sens/2, float("1e%i"%evalue), THREADS)
 
 
 if __name__ == '__main__':
